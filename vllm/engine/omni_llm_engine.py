@@ -1819,6 +1819,10 @@ class OmniLLMEngine:
                 request_id, last_output.outputs[0].finish_reason,
                 last_output.outputs[0].stop_reason,
                 last_output.outputs[0].text, last_output.outputs[0].token_ids)
+            
+            logger.info("last_output.prompt: %r last_output.prompt_token_ids: %r last_output.prompt_logprobs: %r",
+                        last_output.prompt, last_output.prompt_token_ids, last_output.prompt_logprobs)
+
 
             if include_voice and self.talker_engine_args and len(
                     last_output.outputs[0].token_ids) > 1:
