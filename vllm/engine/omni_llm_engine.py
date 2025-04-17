@@ -1168,6 +1168,8 @@ class _MQCode2WavEngineClient:
         if self._errored_with is not None:
             raise ENGINE_DEAD_ERROR(self._errored_with)
 
+        logger.info("send code chunk to code2wav %s | voice_type: %s | code: %r | finished: %r", 
+                    request_id,voice_type, code, finished)
         request_bytes = pickle.dumps((request_id, voice_type, code, finished))
         await self.input_socket.send(request_bytes, copy=False)
 
@@ -1820,7 +1822,7 @@ class OmniLLMEngine:
                 last_output.outputs[0].stop_reason,
                 last_output.outputs[0].text, last_output.outputs[0].token_ids)
             
-            logger.info("last_output.prompt: %r last_output.prompt_token_ids: %r last_output.prompt_logprobs: %r",
+            logger.debug("last_output.prompt: %r last_output.prompt_token_ids: %r last_output.prompt_logprobs: %r",
                         last_output.prompt, last_output.prompt_token_ids, last_output.prompt_logprobs)
 
 

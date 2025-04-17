@@ -15,6 +15,7 @@ import torch
 
 from vllm.engine.arg_utils import nullable_str
 from vllm.logger import init_logger
+from vllm.model_executor.model_loader.weight_utils import safetensors_weights_iterator
 from vllm.model_executor.models.qwen2_code2wav_dit import Qwen2Code2wav
 
 logger = init_logger('vllm.omni')
@@ -87,6 +88,45 @@ def process_code(
             )
     return [waveform.detach().cpu().numpy() for waveform in waveforms]
 
+def load_code2wav(model_path):
+    dit_model, bigvgan_model = {}, {}
+    safetensors = sorted(
+        glob.glob(os.path.join(model_path, '*.safetensors')))
+    legacy_weights = False
+    for key, value in safetensors_weights_iterator(safetensors,
+                                                   use_tqdm_on_load=True):
+        legacy_weights = legacy_weights or 'input_embed.spk_encoder.fc.conv.weight' in key
+        if legacy_weights:
+            break
+    for key, value in safetensors_weights_iterator(safetensors,
+                                                   use_tqdm_on_load=True):
+        if key.startswith('token2wav.code2wav_bigvgan_model.'):
+            if 'generator' not in bigvgan_model:
+                bigvgan_model['generator'] = {}
+            bigvgan_model['generator'][key.replace(
+                'token2wav.code2wav_bigvgan_model.', '')] = value
+        if key.startswith('token2wav.code2wav_dit_model.'):
+            key = key.replace('token2wav.code2wav_dit_model.',
+                              'transformer.')
+            if key.startswith('transformer.input_embed.spk_encoder'):
+                if legacy_weights:
+                    dit_model[key] = value
+                else:
+                    dit_model[key.replace('.bias', '.conv.bias').replace(
+                        '.weight', '.conv.weight')] = value
+            elif '.ff.ff.0.weight' in key or '.ff.ff.0.bias' in key:
+                dit_model[key.replace('.ff.ff.0.weight',
+                                      '.ff.ff.0.0.weight').replace(
+                                          '.ff.ff.0.bias',
+                                          '.ff.ff.0.0.bias')] = value
+            elif '.ff.ff.3.weight' in key or '.ff.ff.3.bias' in key:
+                dit_model[key.replace('.ff.ff.3.weight',
+                                      '.ff.ff.2.weight').replace(
+                                          '.ff.ff.3.bias',
+                                          '.ff.ff.2.bias')] = value
+            else:
+                dit_model[key] = value
+    return dit_model, bigvgan_model
 
 def main():
     # code2wav model
@@ -94,10 +134,7 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # code2wav model
-    dit_model_path = glob.glob(os.path.join(model_path, 'dit',
-                                            'model_*.pt'))[0]
-    bigvgan_model_path = glob.glob(os.path.join(model_path, 'bigvgan',
-                                                'g_*'))[0]
+    dit_model, bigvgan_model = load_code2wav(model_path)
 
     def parse_key(fname, key):
         if fname == key:
@@ -138,14 +175,15 @@ def main():
 
     code2wav_steps: int = 10
     code2wav_bs_mel: int = 24 if args.frequency == "50hz" else 32
-    code2wav = Qwen2Code2wav(dit_ckpt=dit_model_path,
-                             bigvgan_ckpt=bigvgan_model_path,
+    code2wav = Qwen2Code2wav(dit_ckpt=dit_model,
+                             bigvgan_ckpt=bigvgan_model,
                              steps=code2wav_steps,
                              bs_mel=code2wav_bs_mel,
                              odeint_method=args.odeint_method,
                              batched_chunk=args.batched_chunk,
                              frequency=args.frequency,
-                             device=device)
+                             device=device,
+                             with_weight_norm=False)
 
     if args.enable_torch_compile:
         code2wav.enable_torch_compile(args.enable_torch_compile_first_chunk)
