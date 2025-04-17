@@ -40,6 +40,10 @@ parser.add_argument("--odeint-method",
                     default="rk4",
                     choices=["euler", "rk4"])
 parser.add_argument('--multi-waveforms', action='store_true')
+parser.add_argument('--output-dir',
+                    type=str,
+                    default='.',
+                    help="Audio output directory")
 
 args = parser.parse_args()
 
@@ -233,12 +237,13 @@ def main():
           f"took {end_time - start_time} seconds "
           f"for {len(code)} tokens, {len(waveforms)} waveforms")
 
-    print('Writting waveforms to output.wav')
+    tmp_wav_path = os.path.join(args.output_dir, "code2wav.wav")
+    print(f'Writting waveforms to {tmp_wav_path}')
     if args.multi_waveforms:
         for i, waveform in enumerate(waveforms):
-            sf.write(f'output_{i}.wav', waveform, samplerate=args.sample_rate)
+            sf.write(tmp_wav_path, waveform, samplerate=args.sample_rate)
     else:
-        sf.write('output.wav',
+        sf.write(tmp_wav_path,
                  np.concatenate(waveforms),
                  samplerate=args.sample_rate)
 
