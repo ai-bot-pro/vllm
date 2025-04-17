@@ -61,7 +61,7 @@ def process_code(
     all_code = torch.tensor(code, dtype=torch.long, device=device).reshape(1, -1)
     progress, prev_generated, waveforms = 0, None, []
     for i in range(all_code.size(1)):
-        finished = i == code.size(1) - 1
+        finished = i == all_code.size(1) - 1
         chunk_code_length = i * (2 if args.frequency == "50hz" else
                                  4) - code2wav.future_cache_size
         code = all_code[:, :i+1]
