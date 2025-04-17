@@ -66,8 +66,8 @@ def process_code(
                                  4) - code2wav.future_cache_size
         if (chunk_code_length > 0
                 and chunk_code_length % code2wav.chunk_size == 0) or finished:
-            logger.info("process_chunk | chunk_code_length: %d | code2wav.chunk_size: %d | progress: %d | finished: %r | code.shape: %r",
-                        chunk_code_length, code2wav.chunk_size, progress, finished, code.shape)
+            logger.info("process_chunk | %d | codec_embed_size: %d | code2wav.future_cache_size: %d | chunk_code_length: %d | code2wav.chunk_size: %d | progress: %d | finished: %r | code.shape: %r",
+                        i, code2wav.codec_embed_size, code2wav.future_cache_size, chunk_code_length, code2wav.chunk_size, progress, finished, code.shape)
             if progress == 0 and finished:
                 process_chunk = code2wav.process_little_chunk
             else:
