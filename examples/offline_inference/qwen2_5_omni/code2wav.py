@@ -64,6 +64,7 @@ def process_code(
         finished = i == code.size(1) - 1
         chunk_code_length = i * (2 if args.frequency == "50hz" else
                                  4) - code2wav.future_cache_size
+        code = code[:, :i+1]
         if (chunk_code_length > 0
                 and chunk_code_length % code2wav.chunk_size == 0) or finished:
             logger.info("process_chunk | %d | codec_embed_size: %d | code2wav.future_cache_size: %d | chunk_code_length: %d | code2wav.chunk_size: %d | progress: %d | finished: %r | code.shape: %r",
