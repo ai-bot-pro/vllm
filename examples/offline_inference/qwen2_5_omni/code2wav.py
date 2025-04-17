@@ -144,14 +144,7 @@ def main():
     # code2wav model
     model_path = args.code2wav_model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # code2wav model
     dit_model, bigvgan_model = load_code2wav(model_path)
-
-    def parse_key(fname, key):
-        if fname == key:
-            return 'default'
-        return fname.split('_')[0]
 
     code2wav_conds, code2wav_ref_mels = load_spk_dict(model_path, device)
     print(f"speakers: {code2wav_conds.keys()}")
@@ -164,8 +157,8 @@ def main():
         args.voice_type = "default"
     code2wav_cond = code2wav_conds[args.voice_type]
     code2wav_ref_mel = code2wav_ref_mels[args.voice_type]
-    print(f"code2wav_cond {code2wav_cond}")
-    print(f"code2wav_ref_mel {code2wav_ref_mel}")
+    print(f"code2wav_cond {code2wav_cond.shape}")
+    print(f"code2wav_ref_mel {code2wav_ref_mel.shape}")
 
     if args.batched_chunk is None:
         if args.frequency == "50hz":
