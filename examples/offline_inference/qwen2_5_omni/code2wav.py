@@ -154,7 +154,6 @@ def main():
         return fname.split('_')[0]
 
     code2wav_conds, code2wav_ref_mels = load_spk_dict(model_path, device)
-    print(len(code2wav_conds), len(code2wav_ref_mels))
     print(f"speakers: {code2wav_conds.keys()}")
     if "default" not in code2wav_conds:
         code2wav_conds["default"] = code2wav_conds[list(code2wav_conds.keys())[0]]
@@ -165,6 +164,8 @@ def main():
         args.voice_type = "default"
     code2wav_cond = code2wav_conds[args.voice_type]
     code2wav_ref_mel = code2wav_ref_mels[args.voice_type]
+    print(f"code2wav_cond {code2wav_cond}")
+    print(f"code2wav_ref_mel {code2wav_ref_mel}")
 
     if args.batched_chunk is None:
         if args.frequency == "50hz":
@@ -197,7 +198,7 @@ def main():
                                  32768,
                                  80,
                                  device=device,
-                                 dtype=list(code2wav_ref_mel.values())[0].dtype)
+                                 dtype=code2wav_cond.dtype)
     print(f"code2wav_y_all shape: {code2wav_y_all.shape}, type: {code2wav_y_all.dtype}")
 
     start_time = time.perf_counter()
