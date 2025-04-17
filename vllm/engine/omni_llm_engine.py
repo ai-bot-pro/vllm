@@ -2083,7 +2083,8 @@ class OmniLLMEngine:
                                          4) - self.code2wav_future_cache_size
         if (chunk_code_length > 0 and
                 chunk_code_length % self.code2wav_chunk_size == 0) or finished:
-
+            logger.info("process_chunk | code2wav_future_cache_size: %d | chunk_code_length: %d | code2wav.chunk_size: %d | finished: %r | len(code): %d",
+                        self.code2wav_future_cache_size, chunk_code_length, self.code2wav.chunk_size, finished, len(code))
             code2wav_engine_id = 0
             if self.code2wav_data_parallelism > 0:
                 request_hash = hash(request_id) if len(

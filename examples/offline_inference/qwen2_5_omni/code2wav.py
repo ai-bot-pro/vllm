@@ -66,7 +66,7 @@ def process_code(
                                  4) - code2wav.future_cache_size
         if (chunk_code_length > 0
                 and chunk_code_length % code2wav.chunk_size == 0) or finished:
-            logger.info("process_chunk chunk_code_length %d code2wav.chunk_size %d progress %d finished %r code.shape %r",
+            logger.info("process_chunk | chunk_code_length: %d | code2wav.chunk_size: %d | progress: %d | finished: %r | code.shape: %r",
                         chunk_code_length, code2wav.chunk_size, progress, finished, code.shape)
             if progress == 0 and finished:
                 process_chunk = code2wav.process_little_chunk
@@ -255,7 +255,8 @@ def main():
                  np.concatenate(waveforms),
                  samplerate=args.sample_rate)
     info = sf.info(tmp_wav_path,verbose=True)
-    print(f"wav duration {info.duration} s RTF: {cost_time/info.duration/args.concurrency}")
+    if args.concurrency == 1:
+        print(f"wav duration: {info.duration} s | cost: {cost_time} s | RTF: {cost_time/info.duration}")
 
     end_write_time = time.perf_counter()
     print(f'Writing waveforms took {end_write_time - end_time} seconds')
