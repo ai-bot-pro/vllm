@@ -153,7 +153,18 @@ def main():
             return 'default'
         return fname.split('_')[0]
 
-    code2wav_cond, code2wav_ref_mel = load_spk_dict(model_path, device)
+    code2wav_conds, code2wav_ref_mels = load_spk_dict(model_path, device)
+    print(len(code2wav_conds), len(code2wav_ref_mels))
+    print(f"speakers: {code2wav_conds.keys()}")
+    if "default" not in code2wav_conds:
+        code2wav_conds["default"] = code2wav_conds[list(code2wav_conds.keys())[0]]
+    if "default" not in code2wav_ref_mels:
+        code2wav_ref_mels["default"] = code2wav_ref_mels[list(code2wav_ref_mels.keys())[0]]
+    if args.voice_type not in code2wav_conds:
+        print(f"voice type {args.voice_type} not found, using default")
+        args.voice_type = "default"
+    code2wav_cond = code2wav_conds[args.voice_type]
+    code2wav_ref_mel = code2wav_ref_mels[args.voice_type]
 
     if args.batched_chunk is None:
         if args.frequency == "50hz":
@@ -186,7 +197,8 @@ def main():
                                  32768,
                                  80,
                                  device=device,
-                                 dtype=code2wav_ref_mel.dtype)
+                                 dtype=list(code2wav_ref_mel.values())[0].dtype)
+    print(f"code2wav_y_all shape: {code2wav_y_all.shape}, type: {code2wav_y_all.dtype}")
 
     start_time = time.perf_counter()
 
