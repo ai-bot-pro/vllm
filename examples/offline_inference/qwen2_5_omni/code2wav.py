@@ -128,6 +128,18 @@ def load_code2wav(model_path):
                 dit_model[key] = value
     return dit_model, bigvgan_model
 
+def load_spk_dict(model_path, device):
+    code2wav_conds, code2wav_ref_mels = {}, {}
+
+    if not os.path.exists(os.path.join(model_path, 'spk_dict.pt')):
+        return code2wav_conds, code2wav_ref_mels
+
+    for key, value in torch.load(os.path.join(model_path,
+                                              'spk_dict.pt')).items():
+        code2wav_conds[key] = value["cond"].to(device)
+        code2wav_ref_mels[key] = value["ref_mel"].to(device)
+    return code2wav_conds, code2wav_ref_mels
+
 def main():
     # code2wav model
     model_path = args.code2wav_model
@@ -141,30 +153,7 @@ def main():
             return 'default'
         return fname.split('_')[0]
 
-    code2wav_conds = {
-        parse_key(os.path.basename(f), 'spk_emb.npy'):
-        torch.tensor(np.load(f)).to(device)
-        for f in sorted(
-            glob.glob(os.path.join(model_path, 'inputs', '*spk_emb.npy')) +
-            glob.glob(
-                os.path.join(model_path, 'inputs_sft4spks', '*spk_emb.npy')))
-    }
-    code2wav_ref_mels = {
-        parse_key(os.path.basename(f), 'ref_mel.npy'):
-        torch.tensor(np.load(f)).to(device)
-        for f in sorted(
-            glob.glob(os.path.join(model_path, 'inputs', '*ref_mel.npy')) +
-            glob.glob(
-                os.path.join(model_path, 'inputs_sft4spks', '*ref_mel.npy')))
-    }
-
-    if 'default' not in code2wav_conds:
-        code2wav_conds['default'] = list(code2wav_conds.values())[0]
-    if 'default' not in code2wav_ref_mels:
-        code2wav_ref_mels['default'] = list(code2wav_ref_mels.values())[0]
-
-    code2wav_cond = code2wav_conds[args.voice_type]
-    code2wav_ref_mel = code2wav_ref_mels[args.voice_type]
+    code2wav_cond, code2wav_ref_mel = load_spk_dict(model_path, device)
 
     if args.batched_chunk is None:
         if args.frequency == "50hz":
