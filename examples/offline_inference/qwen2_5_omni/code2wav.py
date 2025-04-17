@@ -238,19 +238,24 @@ def main():
         waveforms = waveforms[0]
 
     end_time = time.perf_counter()
+    cost_time = end_time - start_time
     print(f"Code2wav for {args.concurrency} times "
-          f"took {end_time - start_time} seconds "
+          f"took {cost_time} seconds "
           f"for {len(code)} tokens, {len(waveforms)} waveforms")
 
     tmp_wav_path = os.path.join(args.output_dir, "code2wav.wav")
     print(f'Writting waveforms to {tmp_wav_path}')
     if args.multi_waveforms:
         for i, waveform in enumerate(waveforms):
-            sf.write(f"{tmp_wav_path[:-4]}-{i}.wav", waveform, samplerate=args.sample_rate)
-    else:
-        sf.write(tmp_wav_path,
+            wav_path =f"{tmp_wav_path[:-4]}-{i}.wav" 
+            sf.write(wav_path, waveform, samplerate=args.sample_rate)
+            sf.info(wav_path,verbose=True)
+
+    sf.write(tmp_wav_path,
                  np.concatenate(waveforms),
                  samplerate=args.sample_rate)
+    info = sf.info(tmp_wav_path,verbose=True)
+    print(f"wav duration {info.duration} s RTF: {cost_time/info.duration/args.concurrency}")
 
     end_write_time = time.perf_counter()
     print(f'Writing waveforms took {end_write_time - end_time} seconds')
