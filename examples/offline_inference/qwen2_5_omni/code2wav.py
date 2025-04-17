@@ -66,12 +66,13 @@ def process_code(
                                  4) - code2wav.future_cache_size
         if (chunk_code_length > 0
                 and chunk_code_length % code2wav.chunk_size == 0) or finished:
-            start_chunk_time = time.perf_counter()
-
+            logger.info("process_chunk %r")
             if progress == 0 and finished:
                 process_chunk = code2wav.process_little_chunk
             else:
                 process_chunk = code2wav.process_chunk
+
+            start_chunk_time = time.perf_counter()
 
             prev_generated, audio = process_chunk(
                 code2wav_cond,
@@ -83,13 +84,12 @@ def process_code(
                 prev_generated=prev_generated,
                 finished=finished,
             )
-            progress += 1
-            waveforms.append(audio)
-
             end_chunk_time = time.perf_counter()
             print(
                 f'Chunk {progress} took {end_chunk_time - start_chunk_time} seconds'
             )
+            progress += 1
+            waveforms.append(audio)
     return [waveform.detach().cpu().numpy() for waveform in waveforms]
 
 def load_code2wav(model_path):
@@ -198,9 +198,8 @@ def main():
                                  dtype=code2wav_cond.dtype)
     print(f"code2wav_y_all shape: {code2wav_y_all.shape}, type: {code2wav_y_all.dtype}")
 
-    start_time = time.perf_counter()
-
     # warmup
+    start_time = time.perf_counter()
     for _ in range(args.warmup):
         process_code(
             code,
@@ -211,7 +210,12 @@ def main():
             code2wav_steps,
             device,
         )
+    print(f"Code2wav warmup {args.warmup} times "
+          f"took {time.perf_counter() - start_time} seconds "
+          f"for {len(code)} tokens")
 
+    # concurrency
+    start_time = time.perf_counter()
     with ThreadPoolExecutor(max_workers=args.concurrency) as executor:
         futures = []
         for i in range(args.concurrency):
@@ -241,7 +245,7 @@ def main():
     print(f'Writting waveforms to {tmp_wav_path}')
     if args.multi_waveforms:
         for i, waveform in enumerate(waveforms):
-            sf.write(tmp_wav_path, waveform, samplerate=args.sample_rate)
+            sf.write(f"{tmp_wav_path[:-4]}-{i}.wav", waveform, samplerate=args.sample_rate)
     else:
         sf.write(tmp_wav_path,
                  np.concatenate(waveforms),
