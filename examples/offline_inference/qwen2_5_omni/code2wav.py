@@ -242,7 +242,7 @@ def main():
     cost_time = end_time - start_time
     print(f"Code2wav for {args.concurrency} times "
           f"took {cost_time} seconds "
-          f"for {len(code)} tokens, {len(waveforms)} waveforms")
+          f"for {len(code)} tokens, {len(waveforms)} waveforms, {waveforms[0].shape}")
 
     tmp_wav_path = os.path.join(args.output_dir, "code2wav.wav")
     print(f'Writting waveforms to {tmp_wav_path}')
