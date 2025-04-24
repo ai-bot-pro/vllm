@@ -98,6 +98,7 @@ def load_code2wav(model_path):
     dit_model, bigvgan_model = {}, {}
     safetensors = sorted(
         glob.glob(os.path.join(model_path, '*.safetensors')))
+    print(safetensors)
     legacy_weights = False
     for key, value in safetensors_weights_iterator(safetensors,
                                                    use_tqdm_on_load=True):
